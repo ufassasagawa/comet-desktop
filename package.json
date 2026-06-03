@@ -1,0 +1,14 @@
+{
+  "name": "comet-desktop",
+  "version": "0.1.0",
+  "description": "Comet ☄️ デスクトップ・オーバーレイ (Mac)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "license": "MIT",
+  "type": "commonjs",
+  "devDependencies": {
+    "electron": "^42.3.2"
+  }
+}
