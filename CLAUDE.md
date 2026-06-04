@@ -9,8 +9,19 @@ npm start          # 開発モード（本番サイトを読み込む）
 COMET_URL=http://localhost:3000 npm start  # ローカル Web と組み合わせる場合
 ```
 
+## ビルド（.dmg 配布）
+```bash
+npm run dist       # electron-builder → dist/Comet-x.x.x.dmg（universal・未署名=ad-hoc）
+npm run icons      # アイコン再生成（build/icon-source.html を編集したら実行）
+```
+- universal（arm64+x64）/ ad-hoc 署名。配布先は初回のみ右クリック「開く」（手順は `INSTALL.md`）
+- アイコンは `build/icon-source.html`（Canvas 描画）→ `npm run icons` で PNG 化 → `.icns` は
+  `sips`+`iconutil` で `build/icon.icns` に変換済み。Tray 用は `assets/tray.png`（@2x あり）
+
 ## 構成
 - `main.js` … メインプロセス。2種類のウィンドウ＋Tray＋ショートカットを管理
+- `assets/` … 実行時に読む Tray アイコン（asar に同梱）
+- `build/` … ビルド資材（アイコンソース HTML・生成スクリプト・icon.icns）。asar には入らない
 - 外部サイト読み込み方式（Next.js コードは同梱しない）
 - 読み込み先: 環境変数 `COMET_URL`（既定 `https://comet-nu.vercel.app`）
 
@@ -21,24 +32,25 @@ COMET_URL=http://localhost:3000 npm start  # ローカル Web と組み合わせ
 | オーバーレイ窓 | 弾幕表示（透明・最前面・クリック透過） |
 
 ## 主な挙動
-- **Google ログイン**：UA を通常 Chrome に偽装（`app.userAgentFallback`）して Google の制限を回避
+- **アプリ判定クッキー**：起動時に `comet_app=1` を persistent cookie でセット → Web 側（proxy.ts）がブラウザと出し分け（アプリは /dashboard フル機能、ブラウザはランディング/DLページ）
+- **Google ログイン**：UA を通常 Chrome に偽装（`app.userAgentFallback`）して Google の制限を回避。ログインは ufas.co.jp ドメイン限定（Web 側で強制）
 - **「弾幕を開く」横取り**：`setWindowOpenHandler` で `/overlay/` URL を捕捉 → 透明窓で開く（`?app=1` を付与）
 - **クリック透過**：`setIgnoreMouseEvents(true, { forward: true })` → 裏の PPT に操作が届く
-- **全画面プレゼン対応**：`setVisibleOnAllWorkspaces({ visibleOnFullScreen: true })`
+- **全画面プレゼン**：`setVisibleOnAllWorkspaces({ visibleOnFullScreen: true })` を設定しているが、**実環境では他アプリのフルスクリーン（別 Space）に弾幕が重ならない**。運用は「スライドはウィンドウ表示のまま」が前提（INSTALL.md に記載）
 - **非表示時にリソース節約**：`comet-overlay-hide` イベントで Realtime 切断・アニメーション停止
 
 ## 操作口
 - `Cmd+Shift+X` … 弾幕を表示 / 非表示
-- メニューバー `☄️ / ☄️ ON` … 状態表示＋メニュー（弾幕切替・操作窓表示・終了）
-- ダッシュボードの「アプリを終了」ボタン … `/quit-app` ナビゲーションを横取りして `app.quit()`
+- メニューバー ☄️アイコン（表示中は `ON` 付き）… 状態表示＋メニュー（弾幕切替・操作窓表示・表示先ディスプレイ・終了）
+- ダッシュボード／ログイン画面の「アプリを終了」ボタン … `/quit-app` ナビゲーションを横取りして `app.quit()`（ログイン画面側は comet_app クッキーがある時だけ表示）
 - `Cmd+Q` … 終了
 
 ## 利用上の注意
 - Zoom/Meet では**「画面全体」**を共有する（ウィンドウ単体共有では弾幕が写らない）
+- スライドを**全画面（フルスクリーン）モードにしない**（別 Space になり弾幕が重ならない）。ウィンドウ表示のまま発表する
 - `setContentProtection` は**使わない**（使うと画面共有から弾幕が除外される）
-- MVP はプライマリディスプレイ固定
+- 表示先ディスプレイはメニューバーから選択（既定は外部ディスプレイ優先の自動選択）
 
-## 今後（フェーズ2b）
-- `electron-builder` で `.dmg` 化
-- 未署名のため初回は右クリック「開く」で Gatekeeper 回避
-- マルチディスプレイ選択UI
+## 今後（あれば）
+- `comet://` カスタムURLスキーム（ブラウザのボタンからアプリ起動）
+- 署名・公証（配布先が増えたら。現状の社内数人には ad-hoc で十分）

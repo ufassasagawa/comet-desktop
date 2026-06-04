@@ -1,0 +1,102 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Comet icon source</title>
+<style>body { background: #888; margin: 16px } canvas { outline: 1px dashed #555 }</style>
+
+<!-- アプリアイコン（1024×1024・外周は透過マージン） -->
+<canvas id="icon" width="1024" height="1024"></canvas>
+<!-- メニューバー（Tray）用 -->
+<canvas id="tray2x" width="32" height="32"></canvas>
+<canvas id="tray" width="16" height="16"></canvas>
+
+<script>
+// ───────────────────────────────────────────────
+// アプリアイコン: macOS Big Sur 比率（1024 中 824 の角丸スクエア）
+// 夜空グラデ背景 + ☄️ + 星の装飾
+// ───────────────────────────────────────────────
+const c = document.getElementById('icon')
+const ctx = c.getContext('2d')
+
+const M = 100          // 透過マージン
+const S = 1024 - M * 2 // 角丸スクエア一辺 = 824
+const R = 185          // 角丸半径（Big Sur 比率 ≒ 22.5%）
+
+function roundRectPath(g, x, y, w, h, r) {
+  g.beginPath()
+  g.moveTo(x + r, y)
+  g.arcTo(x + w, y, x + w, y + h, r)
+  g.arcTo(x + w, y + h, x, y + h, r)
+  g.arcTo(x, y + h, x, y, r)
+  g.arcTo(x, y, x + w, y, r)
+  g.closePath()
+}
+
+// 角丸スクエアでクリップ
+roundRectPath(ctx, M, M, S, S, R)
+ctx.save()
+ctx.clip()
+
+// 夜空グラデーション（深紺 → 紫）
+const bg = ctx.createLinearGradient(M, M, M + S, M + S)
+bg.addColorStop(0, '#171233')
+bg.addColorStop(0.55, '#3b1d6e')
+bg.addColorStop(1, '#7c3aed')
+ctx.fillStyle = bg
+ctx.fillRect(M, M, S, S)
+
+// 彗星の後ろのほのかな光
+const glow = ctx.createRadialGradient(512, 530, 0, 512, 530, 400)
+glow.addColorStop(0, 'rgba(167, 139, 250, 0.38)')
+glow.addColorStop(1, 'rgba(167, 139, 250, 0)')
+ctx.fillStyle = glow
+ctx.fillRect(M, M, S, S)
+
+// 小さな星（丸）
+const dots = [
+  [212, 238, 5], [332, 178, 3], [818, 262, 6], [758, 182, 3],
+  [232, 758, 4], [182, 562, 3], [848, 722, 4], [642, 838, 3],
+  [422, 208, 2.5], [878, 462, 3], [292, 648, 2.5], [552, 158, 3],
+]
+ctx.fillStyle = 'rgba(255, 255, 255, 0.92)'
+for (const [x, y, r] of dots) {
+  ctx.beginPath()
+  ctx.arc(x, y, r, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+// ✦ スパークル（4方向に尖った星）
+function sparkle(x, y, r, alpha) {
+  ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`
+  ctx.beginPath()
+  ctx.moveTo(x, y - r)
+  ctx.quadraticCurveTo(x, y, x + r, y)
+  ctx.quadraticCurveTo(x, y, x, y + r)
+  ctx.quadraticCurveTo(x, y, x - r, y)
+  ctx.quadraticCurveTo(x, y, x, y - r)
+  ctx.fill()
+}
+sparkle(282, 352, 26, 0.95)
+sparkle(792, 598, 32, 0.9)
+sparkle(702, 288, 18, 0.8)
+sparkle(348, 818, 20, 0.85)
+
+// ☄️ 本体（中央・大きく・暖色のグロー）
+ctx.font = '560px "Apple Color Emoji"'
+ctx.textAlign = 'center'
+ctx.textBaseline = 'middle'
+ctx.shadowColor = 'rgba(255, 200, 90, 0.45)'
+ctx.shadowBlur = 60
+ctx.fillText('☄️', 512, 548)
+ctx.restore()
+
+// ───────────────────────────────────────────────
+// Tray 用: ☄️ 単体（16px / 32px = @2x）
+// ───────────────────────────────────────────────
+for (const [id, size] of [['tray2x', 32], ['tray', 16]]) {
+  const t = document.getElementById(id).getContext('2d')
+  t.font = `${size - 2}px "Apple Color Emoji"`
+  t.textAlign = 'center'
+  t.textBaseline = 'middle'
+  t.fillText('☄️', size / 2, size / 2 + 1)
+}
+</script>

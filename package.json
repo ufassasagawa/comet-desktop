@@ -4,11 +4,41 @@
   "description": "Comet ☄️ デスクトップ・オーバーレイ (Mac)",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "icons": "electron build/gen-icons.js",
+    "dist": "electron-builder --mac"
   },
   "license": "MIT",
   "type": "commonjs",
+  "build": {
+    "appId": "co.ufas.comet",
+    "productName": "Comet",
+    "files": [
+      "main.js",
+      "assets/**"
+    ],
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "icon": "build/icon.icns",
+      "category": "public.app-category.social-networking"
+    },
+    "dmg": {
+      "artifactName": "Comet-${version}.dmg"
+    }
+  },
   "devDependencies": {
-    "electron": "^42.3.2"
+    "electron": "^42.3.2",
+    "electron-builder": "^26.8.1"
   }
 }
