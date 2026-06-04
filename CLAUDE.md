@@ -14,7 +14,7 @@ COMET_URL=http://localhost:3000 npm start  # ローカル Web と組み合わせ
 npm run dist       # electron-builder → dist/Comet-x.x.x.dmg（universal・未署名=ad-hoc）
 npm run icons      # アイコン再生成（build/icon-source.html を編集したら実行）
 ```
-- universal（arm64+x64）/ ad-hoc 署名。配布先は初回のみ右クリック「開く」（手順は `INSTALL.md`）
+- universal（arm64+x64）/ ad-hoc 署名。配布先は初回のみ **システム設定 → プライバシーとセキュリティ →「このまま開く」** で許可（macOS 15+ は右クリック「開く」では不可。手順は `INSTALL.md`）
 - アイコンは `build/icon-source.html`（Canvas 描画）→ `npm run icons` で PNG 化 → `.icns` は
   `sips`+`iconutil` で `build/icon.icns` に変換済み。Tray 用は `assets/tray.png`（@2x あり）
 
