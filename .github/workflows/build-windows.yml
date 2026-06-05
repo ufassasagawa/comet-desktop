@@ -1,0 +1,42 @@
+name: Build Windows installer
+
+# 手動実行（Actions タブの Run workflow）または win-v* タグの push で起動
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'win-v*'
+
+permissions:
+  contents: write # タグ起動時に Release を作成するため
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build NSIS installer (unsigned)
+        run: npx electron-builder --win --x64 --publish never
+
+      # 実行ページからダウンロードできるようにアーティファクト化
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Comet-Setup-windows
+          path: dist/Comet-Setup-*.exe
+          if-no-files-found: error
+
+      # win-v* タグで起動したときは Release にも添付
+      - name: Attach to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/win-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/Comet-Setup-*.exe

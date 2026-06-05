@@ -4,9 +4,13 @@ const path = require('path')
 // 読み込み先（既定は本番。開発時は COMET_URL=http://localhost:3000 で切替）
 const COMET_URL = process.env.COMET_URL || 'https://comet-nu.vercel.app'
 
-// Google は Electron 等の埋め込みブラウザでの OAuth をブロックするため、通常の Chrome を名乗る
+// Google は Electron 等の埋め込みブラウザでの OAuth をブロックするため、通常の Chrome を名乗る（OS に合わせる）
 app.userAgentFallback =
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+  process.platform === 'win32'
+    ? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+    : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+
+const isMac = process.platform === 'darwin'
 
 let launcherWin = null
 let overlayWin = null
@@ -123,7 +127,10 @@ function openOverlay(url) {
 // ── メニューバーの表示を状態に同期（ディスプレイ一覧も含む）──
 function updateTray(isVisible) {
   if (!tray) return
-  tray.setTitle(isVisible ? 'ON' : '') // アイコン画像が☄️なのでタイトルは状態のみ
+  // 状態表示: macOS はメニューバーにテキスト（setTitle は macOS 専用）。
+  // Windows は通知領域にテキストを出せないので tooltip に状態を載せる（全 OS 共通でも更新）。
+  if (isMac) tray.setTitle(isVisible ? 'ON' : '')
+  tray.setToolTip(isVisible ? 'Comet — 弾幕表示中' : 'Comet — 弾幕は非表示')
 
   const displays = screen.getAllDisplays()
   const primary = screen.getPrimaryDisplay()
@@ -158,8 +165,9 @@ function updateTray(isVisible) {
     { type: 'separator' },
   ]
 
+  const sc = isMac ? '⌘⇧X' : 'Ctrl+Shift+X'
   const menu = Menu.buildFromTemplate([
-    { label: isVisible ? '弾幕を隠す  (⌘⇧X)' : '弾幕を表示  (⌘⇧X)', click: toggleOverlay },
+    { label: isVisible ? `弾幕を隠す  (${sc})` : `弾幕を表示  (${sc})`, click: toggleOverlay },
     { label: '操作ウィンドウを表示', click: () => { if (launcherWin) { launcherWin.show(); launcherWin.focus() } } },
     { type: 'separator' },
     ...displaySection,
@@ -188,26 +196,33 @@ function toggleOverlay() {
 
 // ── メニューバー（Tray）──
 function buildTray() {
-  // assets/tray.png（@2x は createFromPath が自動で拾う）
+  // assets/tray.png（@2x は createFromPath が自動で拾う）。Windows では通知領域（タスクバー右下）に出る
   tray = new Tray(nativeImage.createFromPath(path.join(__dirname, 'assets', 'tray.png')))
-  tray.setToolTip('Comet')
-  updateTray(false)
+  // Windows はトレイアイコン左クリックでメニューが出ないので、クリックでメニュー表示
+  if (!isMac) tray.on('click', () => tray.popUpContextMenu())
+  updateTray(false) // tooltip はここで状態付きでセットされる
 }
 
 app.whenReady().then(() => {
-  const appMenu = Menu.buildFromTemplate([
-    {
-      label: app.name,
-      submenu: [
-        { label: '終了', accelerator: 'CmdOrCtrl+Q', click: () => { isQuitting = true; app.quit() } },
-      ],
-    },
-  ])
-  Menu.setApplicationMenu(appMenu)
+  // macOS は画面上部メニューバー（Cmd+Q 用）。Windows は各ウィンドウ内にメニューバーが出て不格好なので消す
+  if (isMac) {
+    Menu.setApplicationMenu(Menu.buildFromTemplate([
+      {
+        label: app.name,
+        submenu: [
+          { label: '終了', accelerator: 'CmdOrCtrl+Q', click: () => { isQuitting = true; app.quit() } },
+        ],
+      },
+    ]))
+  } else {
+    Menu.setApplicationMenu(null)
+  }
 
   createLauncher()
   buildTray()
   globalShortcut.register('CommandOrControl+Shift+X', toggleOverlay)
+  // Windows はアプリメニューを消したので Ctrl+Q をグローバルに張る（mac は appMenu の Cmd+Q が担当）
+  if (!isMac) globalShortcut.register('CommandOrControl+Q', () => { isQuitting = true; app.quit() })
 
   // ディスプレイの抜き挿し時にメニューを更新
   screen.on('display-added', () => updateTray(overlayWin?.isVisible() ?? false))

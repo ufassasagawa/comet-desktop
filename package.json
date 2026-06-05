@@ -1,12 +1,13 @@
 {
   "name": "comet-desktop",
   "version": "0.1.0",
-  "description": "Comet ☄️ デスクトップ・オーバーレイ (Mac)",
+  "description": "Comet ☄️ デスクトップ・オーバーレイ (Mac / Windows)",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "icons": "electron build/gen-icons.js",
-    "dist": "electron-builder --mac"
+    "dist": "electron-builder --mac",
+    "dist:win": "electron-builder --win"
   },
   "license": "MIT",
   "type": "commonjs",
@@ -35,6 +36,25 @@
     },
     "dmg": {
       "artifactName": "Comet-${version}.dmg"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon-1024.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "artifactName": "Comet-Setup-${version}.exe"
     }
   },
   "devDependencies": {

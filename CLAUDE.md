@@ -1,7 +1,8 @@
 # Comet Desktop ☄️
 
-Comet Web（`../comet/`）を Electron で包んだ Mac デスクトップアプリ。
+Comet Web（`../comet/`）を Electron で包んだデスクトップアプリ（**Mac / Windows**）。
 透明・最前面・クリック透過のオーバーレイ窓で、PowerPoint/Keynote の上に弾幕を流す。
+コードは Mac/Windows 共通。OS 差分は `main.js` の `isMac`（`process.platform`）で分岐。
 
 ## 起動
 ```bash
@@ -9,19 +10,31 @@ npm start          # 開発モード（本番サイトを読み込む）
 COMET_URL=http://localhost:3000 npm start  # ローカル Web と組み合わせる場合
 ```
 
-## ビルド（.dmg 配布）
+## ビルド（配布物）
 ```bash
-npm run dist       # electron-builder → dist/Comet-x.x.x.dmg（universal・未署名=ad-hoc）
+# Mac（.dmg）— ローカルでビルド
+npm run dist       # electron-builder --mac → dist/Comet-x.x.x.dmg（universal・未署名=ad-hoc）
 npm run icons      # アイコン再生成（build/icon-source.html を編集したら実行）
+
+# Windows（.exe / NSIS）— GitHub Actions で作る（Mac から直接は Wine 依存で不安定なため）
+#   Actions タブ → "Build Windows installer" を Run、または win-v* タグを push
+#   → dist/Comet-Setup-x.x.x.exe（x64・未署名）。ローカル検証は npm run dist:win（--dir 推奨）
 ```
-- universal（arm64+x64）/ ad-hoc 署名。配布先は初回のみ **システム設定 → プライバシーとセキュリティ →「このまま開く」** で許可（macOS 15+ は右クリック「開く」では不可。手順は `INSTALL.md`）
-- アイコンは `build/icon-source.html`（Canvas 描画）→ `npm run icons` で PNG 化 → `.icns` は
-  `sips`+`iconutil` で `build/icon.icns` に変換済み。Tray 用は `assets/tray.png`（@2x あり）
+- **Mac**: universal（arm64+x64）/ ad-hoc 署名。初回のみ **システム設定 → プライバシーとセキュリティ →「このまま開く」**（macOS 15+ は右クリック「開く」不可）
+- **Windows**: x64 / NSIS インストーラ / 未署名。初回のみ **SmartScreen「詳細情報」→「実行」**。アイコンは electron-builder が `build/icon-1024.png` から .ico を自動生成
+- アイコンは `build/icon-source.html`（Canvas 描画）→ `npm run icons` で PNG 化 → Mac 用 `.icns` は `sips`+`iconutil` で変換済み。Tray 用は `assets/tray.png`（@2x あり）
+
+## OS 差分（main.js）
+- Tray 状態: Mac は `setTitle('ON')`（メニューバー）、Windows は `setToolTip` に状態（通知領域はテキスト不可）＋クリックでメニュー
+- アプリメニュー: Mac は Cmd+Q 用に表示、Windows は `null`（Ctrl+Q をグローバルショートカットで代替）
+- UserAgent: OS に合わせて Chrome を名乗る（Google OAuth 対策）
+- `setVisibleOnAllWorkspaces` / `'screen-saver'` レベルは Mac 概念だが Windows でも無害
 
 ## 構成
 - `main.js` … メインプロセス。2種類のウィンドウ＋Tray＋ショートカットを管理
 - `assets/` … 実行時に読む Tray アイコン（asar に同梱）
-- `build/` … ビルド資材（アイコンソース HTML・生成スクリプト・icon.icns）。asar には入らない
+- `build/` … ビルド資材（アイコンソース HTML・生成スクリプト・icon.icns・icon-1024.png）。asar には入らない
+- `.github/workflows/build-windows.yml` … Windows ビルド（windows-latest）
 - 外部サイト読み込み方式（Next.js コードは同梱しない）
 - 読み込み先: 環境変数 `COMET_URL`（既定 `https://comet-nu.vercel.app`）
 
