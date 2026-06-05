@@ -52,11 +52,11 @@ npm run icons      # アイコン再生成（build/icon-source.html を編集し
 - **全画面プレゼン**：`setVisibleOnAllWorkspaces({ visibleOnFullScreen: true })` を設定しているが、**実環境では他アプリのフルスクリーン（別 Space）に弾幕が重ならない**。運用は「スライドはウィンドウ表示のまま」が前提（INSTALL.md に記載）
 - **非表示時にリソース節約**：`comet-overlay-hide` イベントで Realtime 切断・アニメーション停止
 
-## 操作口
-- `Cmd+Shift+X` … 弾幕を表示 / 非表示
-- メニューバー ☄️アイコン（表示中は `ON` 付き）… 状態表示＋メニュー（弾幕切替・操作窓表示・表示先ディスプレイ・終了）
+## 操作口（括弧内は Windows）
+- `Cmd+Shift+X`（`Ctrl+Shift+X`）… 弾幕を表示 / 非表示
+- ☄️アイコン … Mac はメニューバー（表示中 `ON` 付き）／Windows は通知領域（状態は tooltip）。メニュー＝弾幕切替・操作窓表示・表示先ディスプレイ・終了
 - ダッシュボード／ログイン画面の「アプリを終了」ボタン … `/quit-app` ナビゲーションを横取りして `app.quit()`（ログイン画面側は comet_app クッキーがある時だけ表示）
-- `Cmd+Q` … 終了
+- `Cmd+Q`（`Ctrl+Q`）… 終了
 
 ## 利用上の注意
 - Zoom/Meet では**「画面全体」**を共有する（ウィンドウ単体共有では弾幕が写らない）
